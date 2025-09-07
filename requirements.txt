@@ -1,0 +1,17 @@
+fastapi==0.112.2
+uvicorn[standard]==0.30.6
+python-dotenv==1.0.1
+pydantic==2.8.2
+PyYAML==6.0.2
+
+# LangChain ecosystem used in code
+langchain>=0.2.0
+langchain-core>=0.2.0
+langchain-community>=0.2.0
+langgraph==0.2.18
+langchain-openai==0.3.2
+langchain-google-vertexai==2.0.5
+langchain-anthropic>=0.1.0
+
+# Google auth for Vertex AI credentials
+google-auth==2.32.0

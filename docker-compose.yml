@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: auto-prompt-backend
+    ports:
+      - "8001:8001"
+    environment:
+      # Load additional env from file if present
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - app/.env
+    # Uncomment to mount Vertex AI creds securely instead of baking into image
+    # volumes:
+    #   - ./app/credentials/vertex_ai.json:/run/secrets/vertex_ai.json:ro
+    # environment:
+    #   - VERTEXAI_CREDS_PATH=/run/secrets/vertex_ai.json
+    networks:
+      - app-net
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./app/frontend
+      dockerfile: Dockerfile
+    container_name: auto-prompt-frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+    networks:
+      - app-net
+    restart: unless-stopped
+
+networks:
+  app-net: {}
+
