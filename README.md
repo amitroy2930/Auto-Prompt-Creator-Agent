@@ -47,9 +47,7 @@ The system is built around three core agent modes, each serving specific purpose
 ## 🎥 Demo
 
 <div align="center">
-  <video src="./Images/dark_mode_2.gif" width="600" controls>
-    <p>Your browser does not support the gif tag. <a href="./Images/dark_mode_video.mov">Download the demo video</a></p>
-  </video>
+  <img src="Images/dark_mode_2.gif" alt="Dark mode interface demonstration v2" width="600"/>
   <p><em>Dark mode interface demonstration</em></p>
 </div>
 
