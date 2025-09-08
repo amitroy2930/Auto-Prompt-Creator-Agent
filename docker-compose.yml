@@ -10,6 +10,7 @@ services:
       - "8001:8001"
     environment:
       # Load additional env from file if present
+      - VERTEXAI_CREDS_PATH=/app/app/credentials/vertex_ai.json
       - PYTHONUNBUFFERED=1
     env_file:
       - app/.env

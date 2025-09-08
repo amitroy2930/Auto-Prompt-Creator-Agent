@@ -15,11 +15,20 @@ export const useChatState = () => {
   // Initialize messages and input values for each selected model
   useEffect(() => {
     const initialMessage = {
-      id: 1,
-      type: 'assistant',
-      content: "To use me in default mode, type **`start`**.\n\nTo use me as a prompt assistant, type **`prompt assistant`** or **`start prompt assistant`**.\n\nTo use me as an agent assistant, type **`agent assistant`** or **`start agent assistant`**.",
-      timestamp: new Date()
-    };
+    id: 1,
+    type: "assistant",
+    content:
+      "# Usage Instructions\n\n" +
+      "## Available Modes\n\n" +
+      "### Default Mode\n" +
+      "Type `start` to use standard functionality.\n\n" +
+      "### Prompt Assistant Mode\n" +
+      "Type `prompt assistant` or `start prompt assistant` for prompt creation help.\n\n" +
+      "### Agent Assistant Mode\n" +
+      "Type `agent assistant` or `start agent assistant` for advanced agent capabilities.\n" +
+      "If the agent creates subtasks, type `generate prompts` to generate prompts.",
+    timestamp: new Date(),
+  };
 
     const newModelMessages = {};
     const newModelInputValues = {};
