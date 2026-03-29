@@ -159,7 +159,7 @@ def process_message(thread_id: str, message: str) -> Tuple[str, Any]:
         thread_state["first_turn"] = False
 
     msg_lower = message.lower()
-    if "generate" in msg_lower and ("prompt" in msg_lower or "prompts" in msg_lower):
+    if "generate prompt" in msg_lower or "generate prompts" in msg_lower:
         last_msg = thread_state["history"].messages[-1]
         if hasattr(last_msg, "content"):
             last_response = last_msg.content

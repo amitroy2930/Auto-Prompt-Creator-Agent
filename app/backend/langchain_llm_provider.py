@@ -8,7 +8,7 @@ from langchain_google_vertexai import ChatVertexAI
 from google.oauth2 import service_account
 from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain_core.callbacks import StreamingStdOutCallbackHandler
 
 # Ensure .env at app/.env is loaded regardless of CWD
 CURRENT_DIR = os.path.dirname(__file__)
@@ -48,7 +48,7 @@ def get_llm(model_key: str):
         llm = ChatVertexAI(
             model=model_name.replace("vertex_ai/", ""),
             credentials=credentials,
-            temperature=0.5,
+            temperature=1,
             max_tokens=8192,
             max_retries=2,
             # streaming=True,
