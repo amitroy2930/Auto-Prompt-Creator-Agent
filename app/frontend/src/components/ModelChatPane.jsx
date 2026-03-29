@@ -92,27 +92,33 @@ const ModelChatPane = ({
         }}
         onMouseEnter={() => {
           // Track hover state
-          setHoverState(prev => ({
-            ...prev,
-            [model]: { ...(prev[model]||{}), hovering: true }
-          }));
+          if (setHoverState) {
+            setHoverState(prev => ({
+              ...prev,
+              [model]: { ...(prev[model]||{}), hovering: true }
+            }));
+          }
         }}
         onMouseLeave={() => {
           // Reset hover state
-          setHoverState(prev => ({
-            ...prev,
-            [model]: { ...(prev[model]||{}), hovering: false, fractionY: null }
-          }));
+          if (setHoverState) {
+            setHoverState(prev => ({
+              ...prev,
+              [model]: { ...(prev[model]||{}), hovering: false, fractionY: null }
+            }));
+          }
         }}
         onMouseMove={(e) => {
           // Track Y position inside container as fraction (0 → top, 1 → bottom)
           const rect = e.currentTarget.getBoundingClientRect();
           const y = e.clientY - rect.top;
           const frac = rect.height > 0 ? Math.max(0, Math.min(1, y / rect.height)) : 1;
-          setHoverState(prev => ({
-            ...prev,
-            [model]: { ...(prev[model]||{}), hovering: true, fractionY: frac }
-          }));
+          if (setHoverState) {
+            setHoverState(prev => ({
+              ...prev,
+              [model]: { ...(prev[model]||{}), hovering: true, fractionY: frac }
+            }));
+          }
         }}
       >
         {/* Render messages */}

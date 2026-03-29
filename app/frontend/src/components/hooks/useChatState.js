@@ -12,40 +12,23 @@ export const useChatState = () => {
   const [streamingMessageIds, setStreamingMessageIds] = useState({});
   const [copiedUserMsgId, setCopiedUserMsgId] = useState(null);
 
-  // Initialize messages and input values for each selected model
+  // Ensure state keys exist for all currently selected models
   useEffect(() => {
-    const initialMessage = {
-    id: 1,
-    type: "assistant",
-    content:
-      "# Usage Instructions\n\n" +
-      "## Available Modes\n\n" +
-      "### Default Mode\n" +
-      "Type `start` to use standard functionality.\n\n" +
-      "### Prompt Assistant Mode\n" +
-      "Type `prompt assistant` or `start prompt assistant` for prompt creation help.\n\n" +
-      "### Agent Assistant Mode\n" +
-      "Type `agent assistant` or `start agent assistant` for advanced agent capabilities.\n" +
-      "If the agent creates subtasks, type `generate prompts` to generate prompts.",
-    timestamp: new Date(),
-  };
-
-    const newModelMessages = {};
-    const newModelInputValues = {};
-    
-    selectedModels.forEach(model => {
-      if (!modelMessages[model]) {
-        newModelMessages[model] = [initialMessage];
-      } else {
-        newModelMessages[model] = modelMessages[model];
-      }
-      if (!modelInputValues[model]) {
-        newModelInputValues[model] = '';
-      }
+    setModelMessages(prev => {
+      const next = { ...prev };
+      selectedModels.forEach(model => {
+        if (!next[model]) next[model] = [];
+      });
+      return next;
     });
 
-    setModelMessages(newModelMessages);
-    setModelInputValues(prev => ({ ...prev, ...newModelInputValues }));
+    setModelInputValues(prev => {
+      const next = { ...prev };
+      selectedModels.forEach(model => {
+        if (next[model] === undefined) next[model] = '';
+      });
+      return next;
+    });
   }, [selectedModels]);
 
   // Handle model selection

@@ -2,7 +2,57 @@
 
 const API_BASE_URL = 'http://localhost:8001';
 
-export const startSession = async (threadId, modelKey, isPromptAssistant) => {
+export const createChat = async (title) => {
+  const response = await fetch(`${API_BASE_URL}/api/chats`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ title }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.chat;
+};
+
+export const listChats = async () => {
+  const response = await fetch(`${API_BASE_URL}/api/chats`);
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.chats || [];
+};
+
+export const getChat = async (chatId) => {
+  const response = await fetch(`${API_BASE_URL}/api/chats/${chatId}`);
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return await response.json();
+};
+
+export const deleteChat = async (chatId) => {
+  const response = await fetch(`${API_BASE_URL}/api/chats/${chatId}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return await response.json();
+};
+
+export const startSession = async (threadId, chatId, modelKey, isPromptAssistant) => {
   const response = await fetch(`${API_BASE_URL}/api/start`, {
     method: 'POST',
     headers: {
@@ -10,6 +60,7 @@ export const startSession = async (threadId, modelKey, isPromptAssistant) => {
     },
     body: JSON.stringify({
       thread_id: threadId,
+      chat_id: chatId,
       is_first_turn: isPromptAssistant,
       llm_name: modelKey
     }),
@@ -22,7 +73,7 @@ export const startSession = async (threadId, modelKey, isPromptAssistant) => {
   return await response.json();
 };
 
-export const sendMessage = async (message, threadId) => {
+export const sendMessage = async (message, threadId, chatId, model) => {
   const response = await fetch(`${API_BASE_URL}/api/message`, {
     method: 'POST',
     headers: {
@@ -30,7 +81,9 @@ export const sendMessage = async (message, threadId) => {
     },
     body: JSON.stringify({
       message: message,
-      thread_id: threadId
+      thread_id: threadId,
+      chat_id: chatId,
+      model
     }),
   });
   
@@ -47,7 +100,7 @@ export const sendMessage = async (message, threadId) => {
   }
 };
 
-export const sendMessageStream = async (message, threadId, onChunk, onComplete, onError) => {
+export const sendMessageStream = async (message, threadId, chatId, model, onChunk, onComplete, onError) => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/message`, {
       method: 'POST',
@@ -56,7 +109,9 @@ export const sendMessageStream = async (message, threadId, onChunk, onComplete, 
       },
       body: JSON.stringify({
         message: message,
-        thread_id: threadId
+        thread_id: threadId,
+        chat_id: chatId,
+        model
       }),
     });
     

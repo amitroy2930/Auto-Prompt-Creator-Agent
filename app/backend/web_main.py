@@ -1,12 +1,14 @@
 """FastAPI entrypoint for Auto Prompt Creator backend (refactored)."""
 
 from contextlib import asynccontextmanager
+from datetime import datetime
+from typing import Any, Dict
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
-from models import StartRequest, EndRequest, MessageRequest
+from models import StartRequest, EndRequest, MessageRequest, CreateChatRequest
 from chat_service import (
     init_thread,
     process_message,
@@ -15,6 +17,42 @@ from chat_service import (
     list_active_threads,
     clear_all_threads,
 )
+from db import (
+    init_db,
+    create_chat_session,
+    list_chat_sessions,
+    get_chat_session,
+    delete_chat_session,
+)
+
+
+def _iso(value: Any) -> Any:
+    if isinstance(value, datetime):
+        return value.isoformat()
+    return value
+
+
+def serialize_chat_session(row: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "id": str(row["id"]),
+        "title": row.get("title") or "New chat",
+        "created_at": _iso(row.get("created_at")),
+        "updated_at": _iso(row.get("updated_at")),
+        "message_count": row.get("message_count", 0),
+        "preview": row.get("preview"),
+    }
+
+
+def serialize_chat_message(row: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "id": row["id"],
+        "session_id": str(row["session_id"]),
+        "thread_id": row["thread_id"],
+        "model": row.get("model"),
+        "role": row["role"],
+        "content": row["content"],
+        "created_at": _iso(row.get("created_at")),
+    }
 
 
 # =============================
@@ -22,6 +60,7 @@ from chat_service import (
 # =============================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    init_db()
     yield
     clear_all_threads()
     print("All threads cleared and server stopped.")
@@ -52,14 +91,21 @@ app.add_middleware(
 @app.post("/api/start")
 def start_chat(body: StartRequest):
     """Start a new chat session."""
-    init_thread(body.thread_id, body.is_first_turn, body.llm_name)
-    return {"ok": True, "thread_id": body.thread_id}
+    chat_id = body.chat_id or body.thread_id.split("_", 1)[0]
+    create_chat_session(chat_id=chat_id)
+    init_thread(body.thread_id, body.is_first_turn, body.llm_name, chat_id=chat_id)
+    return {"ok": True, "thread_id": body.thread_id, "chat_id": chat_id}
 
 
 @app.post("/api/message")
 def send_message(body: MessageRequest):
     """Send a user message to the thread and get AI response."""
-    kind, payload = process_message(body.thread_id, body.message)
+    kind, payload = process_message(
+        body.thread_id,
+        body.message,
+        chat_id=body.chat_id,
+        model=body.model,
+    )
     if kind == "stream":
         return StreamingResponse(payload, media_type="text/event-stream")
     return payload
@@ -85,6 +131,38 @@ def get_thread_history(thread_id: str):
 def list_threads():
     """List all active threads."""
     return list_active_threads()
+
+
+@app.post("/api/chats")
+def create_chat(body: CreateChatRequest):
+    chat = create_chat_session(title=body.title)
+    return {"chat": serialize_chat_session(chat)}
+
+
+@app.get("/api/chats")
+def list_chats():
+    chats = list_chat_sessions()
+    return {"chats": [serialize_chat_session(chat) for chat in chats]}
+
+
+@app.get("/api/chats/{chat_id}")
+def get_chat(chat_id: str):
+    result = get_chat_session(chat_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Chat not found")
+
+    return {
+        "chat": serialize_chat_session(result["chat"]),
+        "messages": [serialize_chat_message(message) for message in result["messages"]],
+    }
+
+
+@app.delete("/api/chats/{chat_id}")
+def delete_chat(chat_id: str):
+    deleted = delete_chat_session(chat_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Chat not found")
+    return {"ok": True}
 
 
 # =============================

@@ -4,15 +4,12 @@ import { useRef } from 'react';
 import { sendMessageStream, endSession, startSession } from '../api';
 
 export const useMessageHandling = ({
-  thread_id_1,
-  selectedModels,
-  modelMessages,
+  chatId,
   setModelMessages,
   isLoading,
   setIsLoading,
   isStreaming,
   setIsStreaming,
-  streamingMessageIds,
   setStreamingMessageIds,
   shouldAutoScroll,
   scrollToBottom
@@ -33,7 +30,7 @@ export const useMessageHandling = ({
       setIsLoading(prev => ({ ...prev, [model]: true }));
 
       try {
-        await startSession(`${thread_id_1}_${model}`, model, isPromptAssistant);
+        await startSession(`${chatId}_${model}`, chatId, model, isPromptAssistant);
         setModelMessages(prev => ({
           ...prev,
           [model]: [...(prev[model] || []), {
@@ -43,7 +40,7 @@ export const useMessageHandling = ({
             timestamp: new Date()
           }]
         }));
-      } catch (err) {
+      } catch {
         setModelMessages(prev => ({
           ...prev,
           [model]: [...(prev[model] || []), {
@@ -67,7 +64,7 @@ export const useMessageHandling = ({
       }
 
       try {
-        await endSession(`${thread_id_1}_${model}`);
+        await endSession(`${chatId}_${model}`);
         setModelMessages(prev => ({
           ...prev,
           [model]: [...(prev[model] || []), {
@@ -77,7 +74,7 @@ export const useMessageHandling = ({
             timestamp: new Date()
           }]
         }));
-      } catch (err) {
+      } catch {
         setModelMessages(prev => ({
           ...prev,
           [model]: [...(prev[model] || []), {
@@ -140,7 +137,9 @@ export const useMessageHandling = ({
       
       await sendMessageStream(
         messageContent,
-        `${thread_id_1}_${model}`,
+        `${chatId}_${model}`,
+        chatId,
+        model,
         (chunk) => {
           accumulatedContent += chunk;
           

@@ -1,15 +1,39 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: auto-prompt-postgres
+    environment:
+      POSTGRES_DB: autoprompt
+      POSTGRES_USER: autoprompt
+      POSTGRES_PASSWORD: autoprompt
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U autoprompt -d autoprompt"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - app-net
+    restart: unless-stopped
+
   backend:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: auto-prompt-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
       - "8001:8001"
     environment:
       # Load additional env from file if present
       - VERTEXAI_CREDS_PATH=/app/app/credentials/vertex_ai.json
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=postgresql://autoprompt:autoprompt@postgres:5432/autoprompt
     env_file:
       - app/.env
     # Uncomment to mount Vertex AI creds securely instead of baking into image
@@ -36,4 +60,7 @@ services:
 
 networks:
   app-net: {}
+
+volumes:
+  postgres-data: {}
 

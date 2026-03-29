@@ -15,3 +15,4 @@ langchain-anthropic==1.3.0
 
 # Google auth for Vertex AI credentials
 google-auth==2.45.0
+psycopg[binary]==3.2.9

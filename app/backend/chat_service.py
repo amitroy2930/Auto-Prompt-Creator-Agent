@@ -2,7 +2,6 @@ import os
 import re
 from typing import Dict, Tuple, Callable, Iterator, Any, Optional
 
-from fastapi.responses import StreamingResponse  # only for media type constant
 from langchain_core.messages import SystemMessage
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
@@ -11,6 +10,7 @@ from utils import load_file
 from langchain_llm_provider import get_llm
 
 from state import get_thread_store, get_session_history
+from db import ensure_chat_session, save_chat_message
 
 
 # =============================
@@ -58,7 +58,12 @@ def load_prompts() -> Dict[str, Any]:
     return load_file(PROMPT_FILE, file_type="yaml")
 
 
-def init_thread(thread_id: str, is_prompt_assistant: Optional[bool], model_key: Optional[str] = None) -> None:
+def init_thread(
+    thread_id: str,
+    is_prompt_assistant: Optional[bool],
+    model_key: Optional[str] = None,
+    chat_id: Optional[str] = None,
+) -> None:
     """Initialize a new conversation thread."""
     model = get_llm(model_key)
     prompts = load_prompts()
@@ -92,6 +97,8 @@ def init_thread(thread_id: str, is_prompt_assistant: Optional[bool], model_key: 
             "system_message": None,
             "is_streaming": "gemini" in (model_key or ""),
             "first_turn": True,
+            "chat_id": chat_id,
+            "model": model_key,
         }
 
     store[thread_id].update(
@@ -100,13 +107,27 @@ def init_thread(thread_id: str, is_prompt_assistant: Optional[bool], model_key: 
             "system_message": system_message,
             "is_streaming": "gemini" in (model_key or ""),
             "first_turn": True,
+            "chat_id": chat_id,
+            "model": model_key,
             "config": {"configurable": {"session_id": thread_id}},
         }
     )
+
+    if chat_id:
+        ensure_chat_session(chat_id)
+
     print(f"2. Available keys insude thread_store: {store.keys()}")
 
 
-def _stream_prompt_generator(chat_with_history, message: str, config) -> Iterator[str]:
+def _stream_prompt_generator(
+    chat_with_history,
+    message: str,
+    config,
+    *,
+    chat_id: Optional[str],
+    thread_id: str,
+    model: Optional[str],
+) -> Iterator[str]:
     try:
         response_content = ""
         for chunk in chat_with_history.stream(message, config=config):
@@ -116,37 +137,92 @@ def _stream_prompt_generator(chat_with_history, message: str, config) -> Iterato
                 content = format_llm_response(str(chunk))
             response_content += content
             yield content
+
+        if chat_id and response_content.strip():
+            save_chat_message(
+                chat_id=chat_id,
+                thread_id=thread_id,
+                role="assistant",
+                content=response_content,
+                model=model,
+            )
     except Exception as e:
         print(f"Streaming error: {e}")
         yield f"Error: {str(e)}"
 
 
-def _stream_task_generator(chat_with_history, tasks: Dict[str, str], config) -> Iterator[str]:
+def _stream_task_generator(
+    chat_with_history,
+    tasks: Dict[str, str],
+    config,
+    *,
+    chat_id: Optional[str],
+    thread_id: str,
+    model: Optional[str],
+) -> Iterator[str]:
     try:
+        combined_response = ""
         for task_num, task in tasks.items():
-            yield f"\n--- Processing Task {task_num} ---\n"
+            section_header = f"\n--- Processing Task {task_num} ---\n"
+            combined_response += section_header
+            yield section_header
             for chunk in chat_with_history.stream(task, config=config):
                 if hasattr(chunk, "content"):
                     content = format_llm_response(chunk.content)
                 else:
                     content = format_llm_response(str(chunk))
+                combined_response += content
                 yield content
+            combined_response += "\n\n"
             yield "\n\n"
+
+        if chat_id and combined_response.strip():
+            save_chat_message(
+                chat_id=chat_id,
+                thread_id=thread_id,
+                role="assistant",
+                content=combined_response,
+                model=model,
+            )
     except Exception as e:
         print(f"Streaming error: {e}")
         yield f"Error: {str(e)}"
 
 
-def process_message(thread_id: str, message: str) -> Tuple[str, Any]:
+def process_message(
+    thread_id: str,
+    message: str,
+    *,
+    chat_id: Optional[str] = None,
+    model: Optional[str] = None,
+) -> Tuple[str, Any]:
     """Process a user message. Returns ('stream', generator) or ('json', payload)."""
     store = get_thread_store()
     if thread_id not in store:
-        return (
-            "json",
-            {"message": "Please Type 'start'/ 'start prompt assistant'/ 'start agent assistant' to start the session"},
-        )
+        if model:
+            init_thread(
+                thread_id=thread_id,
+                is_prompt_assistant=None,
+                model_key=model,
+                chat_id=chat_id,
+            )
+        else:
+            return (
+                "json",
+                {"message": "Please Type 'start'/ 'start prompt assistant'/ 'start agent assistant' to start the session"},
+            )
 
     thread_state = store[thread_id]
+    resolved_chat_id = chat_id or thread_state.get("chat_id")
+    resolved_model = model or thread_state.get("model")
+
+    if resolved_chat_id:
+        thread_state["chat_id"] = resolved_chat_id
+        ensure_chat_session(resolved_chat_id)
+
+    if resolved_model:
+        thread_state["model"] = resolved_model
+
     chat_with_history = thread_state["chat_with_history"]
     config = thread_state["config"]
     system_message = thread_state["system_message"]
@@ -157,6 +233,15 @@ def process_message(thread_id: str, message: str) -> Tuple[str, Any]:
         for msg in system_message:
             thread_state["history"].add_message(msg)
         thread_state["first_turn"] = False
+
+    if resolved_chat_id:
+        save_chat_message(
+            chat_id=resolved_chat_id,
+            thread_id=thread_id,
+            role="user",
+            content=message,
+            model=resolved_model,
+        )
 
     msg_lower = message.lower()
     if "generate prompt" in msg_lower or "generate prompts" in msg_lower:
@@ -175,7 +260,17 @@ def process_message(thread_id: str, message: str) -> Tuple[str, Any]:
         )
 
         if is_streaming:
-            return ("stream", _stream_task_generator(chat_with_history, all_subtasks, config))
+            return (
+                "stream",
+                _stream_task_generator(
+                    chat_with_history,
+                    all_subtasks,
+                    config,
+                    chat_id=resolved_chat_id,
+                    thread_id=thread_id,
+                    model=resolved_model,
+                ),
+            )
         else:
             try:
                 all_responses: Dict[str, str] = {}
@@ -193,6 +288,16 @@ def process_message(thread_id: str, message: str) -> Tuple[str, Any]:
                         for task_num, content in all_responses.items()
                     ]
                 )
+
+                if resolved_chat_id and combined_response.strip():
+                    save_chat_message(
+                        chat_id=resolved_chat_id,
+                        thread_id=thread_id,
+                        role="assistant",
+                        content=combined_response,
+                        model=resolved_model,
+                    )
+
                 return ("json", {"message": combined_response, "individual_responses": all_responses})
             except Exception as e:
                 print(f"Non-streaming error: {e}")
@@ -200,7 +305,17 @@ def process_message(thread_id: str, message: str) -> Tuple[str, Any]:
 
     else:
         if is_streaming:
-            return ("stream", _stream_prompt_generator(chat_with_history, message, config))
+            return (
+                "stream",
+                _stream_prompt_generator(
+                    chat_with_history,
+                    message,
+                    config,
+                    chat_id=resolved_chat_id,
+                    thread_id=thread_id,
+                    model=resolved_model,
+                ),
+            )
         else:
             try:
                 response = chat_with_history.invoke(message, config=config)
@@ -208,6 +323,16 @@ def process_message(thread_id: str, message: str) -> Tuple[str, Any]:
                     response_content = format_llm_response(response.content)
                 else:
                     response_content = format_llm_response(str(response))
+
+                if resolved_chat_id and response_content.strip():
+                    save_chat_message(
+                        chat_id=resolved_chat_id,
+                        thread_id=thread_id,
+                        role="assistant",
+                        content=response_content,
+                        model=resolved_model,
+                    )
+
                 return ("json", {"message": response_content})
             except Exception as e:
                 print(f"Non-streaming error: {e}")

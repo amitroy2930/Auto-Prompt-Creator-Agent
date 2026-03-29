@@ -20,6 +20,8 @@ def get_session_history(session_id: str) -> BaseChatMessageHistory:
             "system_message": None,
             "is_streaming": False,
             "first_turn": True,
+            "chat_id": None,
+            "model": None,
         }
     return _thread_store[session_id]["history"]
 
