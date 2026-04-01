@@ -31,6 +31,5 @@ WORKDIR /app/app/backend
 
 # Default environment hints (override at runtime as needed)
 # ENV VERTEXAI_CREDS_PATH=/app/app/credentials/vertex_ai.json
-
-CMD ["uvicorn", "web_main:app", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["sh", "-c", "python -u llm_server.py & uvicorn web_main:app --host 0.0.0.0 --port 8001"]
 
