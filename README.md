@@ -1,172 +1,114 @@
-# Auto-Prompt-Creator-Agent
+# PromptPilot AI (Auto-Prompt-Creator-Agent)
 
 <div align="center">
-  <img src="./Images/light_mode.png" alt="Auto-Prompt-Creator-Agent Interface" width="800">
-  
+  <img src="./Images/light_mode.png" alt="PromptPilot AI Interface" width="800">
+
   [![GitHub Stars](https://img.shields.io/github/stars/amitroy2930/Auto-Prompt-Creator-Agent?style=for-the-badge)](https://github.com/amitroy2930/Auto-Prompt-Creator-Agent/stargazers)
   [![GitHub Forks](https://img.shields.io/github/forks/amitroy2930/Auto-Prompt-Creator-Agent?style=for-the-badge)](https://github.com/amitroy2930/Auto-Prompt-Creator-Agent/network/members)
   [![License](https://img.shields.io/github/license/amitroy2930/Auto-Prompt-Creator-Agent?style=for-the-badge)](https://github.com/amitroy2930/Auto-Prompt-Creator-Agent/blob/main/LICENSE)
 </div>
 
-## 🚀 Overview
+## Problem Statement
 
-**Auto-Prompt-Creator-Agent** is an intelligent multi-agent system designed to streamline prompt engineering and AI interactions. This powerful tool combines multiple specialized agent modes to provide a comprehensive solution for creating, optimizing, and managing AI prompts across various use cases.
+As an AI engineer, a significant amount of time is often spent on two recurring challenges:
 
-### ✨ Key Features
+1. **Agent Design Decisions**
+   Deciding whether a task should be handled by a single agent or split into multiple sub-tasks executed by multiple agents.
 
-- **🤖 Multiple Agent Modes**: Three distinct operational modes for different use cases
-- **🎯 Intelligent Prompt Generation**: Automated creation of task-specific prompts
-- **🔧 Adaptive Interface**: Seamless switching between different agent functionalities
-- **💡 Smart Recommendations**: AI-powered agent suggestions based on user requirements
-- **🌓 Modern UI**: Clean, responsive interface with light/dark mode support
+2. **Prompt Engineering Overhead**
+   Crafting, refining, and optimizing prompts—often by testing across multiple LLMs—before reaching the best version.
 
-## 🏗️ Architecture
+This iterative process is time-consuming and inefficient.
 
-The system is built around three core agent modes, each serving specific purposes:
+## Solution: PromptPilot AI
 
-### 1. **Normal Chat Mode** 💬
-- Standard conversational interface for general AI interactions
-- Natural language processing for everyday queries
-- Context-aware responses and continuous conversation flow
-- Perfect for brainstorming, general assistance, and casual interactions
+**PromptPilot AI** is designed to solve both challenges by providing a structured and interactive workspace for prompt engineering, agent planning, and multi-model comparison.
 
-### 2. **Prompting Agent Mode** ⚡
-- Specialized mode for generating task-specific prompts
-- Advanced prompt engineering capabilities
-- Template-based prompt creation with customization options
-- Optimization suggestions for improved AI performance
-- Export functionality for generated prompts
+## Key Features
 
-### 3. **Agent Assistant Mode** 🎯
-- Interactive mode with guided question-and-answer sessions
-- Intelligent agent recommendation system
-- Dynamic prompt creation based on user responses
-- Personalized suggestions for optimal agent selection
-- Step-by-step workflow guidance
+### 1) Prompt Assistant Mode
 
-## 🎥 Demo
+- Activate by typing: **`prompt assistant`**
+- Automatically restructures your input prompt using best practices inspired by OpenAI, Claude, and Gemini patterns.
+- Improves clarity, structure, and effectiveness for better LLM outputs.
+
+### 2) Agent Assistant Mode
+
+- Activate by typing: **`agent assistant`** followed by your task description.
+- The system will:
+  - Ask **MCQ-based questions** to understand your objective.
+  - Suggest an **optimal breakdown into sub-tasks/sub-agents**.
+  - Allow you to **modify/refine** the proposed structure.
+  - After finalization, type **`generate prompts`** to create:
+    - **Separate prompts for each sub-task** automatically.
+
+### 3) Multi-Model Comparison
+
+- Supports multiple LLMs such as **OpenAI, Gemini, and Claude**.
+- Shows responses **side-by-side in a single view**.
+- Helps you quickly compare outputs and select the best one.
+
+### 4) Normal Chat Mode
+
+- If no specific mode is selected, PromptPilot works as a **standard chatbot**.
+- Includes:
+  - Multi-model side-by-side comparison.
+  - **Real-time web search** integration via Tavily (through MCP).
+  - More up-to-date and context-aware responses.
+
+### 5) Persistent Memory
+
+- All conversations are stored in a **PostgreSQL database**.
+- This ensures:
+  - No data loss after restart.
+  - Ability to **resume conversations anytime** from the sidebar.
+
+## Demo
 
 <div align="center">
-  <img src="Images/dark_mode_2.gif" alt="Dark mode interface demonstration v2" width="600"/>
-  <p><em>Dark mode interface demonstration</em></p>
+  <img src="Images/dark_mode_2.gif" alt="PromptPilot AI dark mode demo" width="600"/>
+  <p><em>PromptPilot AI in dark mode</em></p>
 </div>
 
-## 🛠️ Installation
+## How to Run the Project
 
 ### Prerequisites
-- Python 3.8 or higher
-- Node.js 16+ (if using web interface)
-- Required API keys for AI services
 
-### Quick Start
+- Docker Desktop
+- API keys for the LLM providers you want to use
 
-1. **Clone the repository**
+### Steps
+
+1. Clone the repository:
    ```bash
    git clone https://github.com/amitroy2930/Auto-Prompt-Creator-Agent.git
+   ```
+
+2. Add your API keys in the `.env` file.
+
+3. Navigate to the project folder:
+   ```bash
    cd Auto-Prompt-Creator-Agent
    ```
 
-2. **Install dependencies**
+4. Run the application:
    ```bash
-   pip install -r requirements.txt
+   docker compose up
    ```
 
-3. **Configure environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your API keys and configuration
+5. Open the frontend:
+   ```
+   http://0.0.0.0:8080/
    ```
 
-4. **Run the application**
-   ```bash
-   Backend: python web_main.py
-   Fronend: npm run dev
-   ```
+## Summary
 
-## 📋 Usage
+PromptPilot AI reduces the effort spent on:
 
-### Getting Started
+- Deciding agent architecture
+- Repeated prompt-engineering iterations
 
-1. **Launch the application** and select your preferred mode
-2. **Normal Chat**: Start typing for standard AI conversations(Type: Start)
-3. **Prompting Agent**: Define your task requirements and generate optimized prompts (Type: Prompt Assistant)
-4. **Agent Assistant**: Answer guided questions to receive personalized recommendations (Type: Agent Assistant)
-
-### Example Workflows
-
-#### Creating a Marketing Prompt
-```
-Mode: Prompting Agent
-Task: "Create a social media marketing campaign for a tech startup"
-Output: Optimized prompt with targeting, tone, and content guidelines
-```
-
-#### Getting Agent Recommendations
-```
-Mode: Agent Assistant
-Human: "Want to convert text to sql besd on schema description"
-AI: "Ask Question"
-Human: "Answers The Question"
-Result: Recommended agents and custom prompt generation
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-```bash
-# API Configuration
-OPENAI_API_KEY=your_openai_key
-ANTHROPIC_API_KEY=your_anthropic_key
-
-# Application Settings
-DEBUG=False
-MAX_TOKENS=2000
-TEMPERATURE=0.7
-```
-
-### Customization Options
-- **Agent Personalities**: Modify agent behaviors in `app/backend/prompts`
-- **UI Themes**: Customize appearance in `arc/App.css/`
-
-## 🤝 Contributing
-
-We welcome contributions! Here's how you can help:
-
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
-4. **Push** to the branch (`git push origin feature/amazing-feature`)
-5. **Open** a Pull Request
-
-<!-- ### Development Guidelines
-- Follow PEP 8 style guidelines
-- Add tests for new features
-- Update documentation as needed
-- Ensure backward compatibility -->
-
-<!-- ## 📊 Roadmap
-
-- [ ] **Multi-language Support**: Expand to support multiple languages
-- [ ] **Advanced Analytics**: Usage statistics and performance metrics
-- [ ] **Plugin System**: Extensible architecture for custom agents
-- [ ] **Cloud Integration**: Deploy and scale in cloud environments
-- [ ] **Mobile App**: Native mobile application development
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. -->
-
-## 🙏 Acknowledgments
-
-- Thanks to the open-source AI community for inspiration and tools
-<!-- - Special recognition to contributors and beta testers
-- Built with modern web technologies and AI frameworks -->
-
-<!-- ## 📞 Support
-
-- **Documentation**: [Wiki](https://github.com/amitroy2930/Auto-Prompt-Creator-Agent/wiki)
-- **Issues**: [GitHub Issues](https://github.com/amitroy2930/Auto-Prompt-Creator-Agent/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/amitroy2930/Auto-Prompt-Creator-Agent/discussions) -->
+It provides a **structured, interactive, and multi-model environment** to accelerate AI development workflows.
 
 ---
 
